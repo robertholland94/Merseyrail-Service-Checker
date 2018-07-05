@@ -2,6 +2,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import smtplib
 import sys
+import time
 
 web_address = "https://merseyrail.org/"
 
@@ -15,9 +16,22 @@ web_request = urlopen(web_address)
 #Parses HTTPResponse to HTML
 page_parsed = BeautifulSoup(web_request, 'html.parser')
 
+#Determine what the service the the user would like to check and what line it is on.
+users_service = input("What service would you like to check for disruptions?")
+
+if users_service in ['Southport', 'Hunts Cross', 'Kirkby', 'Ormskirk'] :
+    #Services are on the Northern line
+    service_line = 'northern'
+elif users_service in ['Ellesmere Port', 'Chester', 'West Kirby', 'New Brighton'] :
+    #Services are on the Wirral line
+    service_line = 'wirral'
+else :
+    print('Service not available on the Merseyrail network.')
+    sys.exit(0)
+
 #Locates Kirkby train tags and isolates it with relevant tags.
 #Can use one parent and next_sibling when looking at service status.
-service = page_parsed.find('div', attrs={'class' : 'line northern'}).find(text='Southport').parent.parent
+service = page_parsed.find('div', attrs={'class' : 'line ' + service_line}).find(text=users_service).parent.parent
 
 #Locates service status of isolated service.
 service_status = service.find('span', attrs={'class' : 'service'}).text
@@ -37,7 +51,7 @@ except Exception as e :
     #Exits application
     sys.exit(0)
 
-#Open email tempate and converts to list  
+#Open email template and converts to list  
 open_file = open('email_template.txt', 'r')
 email_txt = open_file.read().split('\n')
 
@@ -46,13 +60,19 @@ disruption = service.parent.find('div', attrs={'class' : 'status-pop'})
 
 #Constructs email body
 if disruption == None :
-    email_txt[-1] = 'There appears to be no disruptions to your service today.'
+    
+    if service_status == 'Good Service' :
+        #Service is good, no disruptions.
+        email_txt[-1] = 'There appears to be no disruptions to your service at this time.'
+    else :
+        #Disrupted service with no explanation given on Merseyrail website.
+        email_txt[-1] = 'There are currently disruptions to your service at the time. Please check the Merseyrail Twitter for more information.'
 else :
     #Explanation given my Merseyrail for disruptions
-    email_txt[-1] = disruption.text.replace('  ', ' ').replace('Impace:', ' ')
+    email_txt[-1] = disruption.text.replace('  ', ' ').replace('Impact:', ' ')
 
 #Convert back to string to send email.    
-email_txt = ''.join(str(e + '\n') for e in email_txt)
+email_txt = ''.join(str(e + '\n') for e in email_txt) + '\nRegards,\nTrain Updates'
 
 try :
     #Sends email using first arguement.
@@ -64,5 +84,3 @@ except Exception as e :
     
     #Exits application
     sys.exit(0)
-
-print("Email Sent!")
