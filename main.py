@@ -2,7 +2,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import smtplib
 import sys
-import time
+import datetime
 
 web_address = "https://merseyrail.org/"
 
@@ -17,7 +17,7 @@ web_request = urlopen(web_address)
 page_parsed = BeautifulSoup(web_request, 'html.parser')
 
 #Determine what the service the the user would like to check and what line it is on.
-users_service = input("What service would you like to check for disruptions?")
+users_service = input("What service would you like to check for disruptions?").lower().title()
 
 if users_service in ['Southport', 'Hunts Cross', 'Kirkby', 'Ormskirk'] :
     #Services are on the Northern line
@@ -28,8 +28,28 @@ elif users_service in ['Ellesmere Port', 'Chester', 'West Kirby', 'New Brighton'
 else :
     print('Service not available on the Merseyrail network.')
     sys.exit(0)
+    
+#Determines the time the user would likme to check for disruptions.    
+time_check = input('What time would you like to check for disruptions? Note: Must be written in hh:mm format')
 
-#Locates Kirkby train tags and isolates it with relevant tags.
+if len(time_check) != 5 :
+    #Incorrect time format.
+    print('Please use appropriate format. HH:MM')
+    sys.exit(0)
+else :
+    #Converts hours and minutes to a measurable format.
+    hour = int(time_check[:2])
+    mins = int(time_check[3:])
+
+#Calculates how long to pause for before continuing/sending email
+time_stamp1 = datetime.datetime.now()
+time_stamp2 = time_stamp1.replace(hour=hour, minute=mins)
+delta = time_stamp2 - time_stamp
+
+#Pauses application for seconds calculated above
+pause.seconds(delta.total_seconds())
+
+#Locates service train tags and isolates it with relevant tags.
 #Can use one parent and next_sibling when looking at service status.
 service = page_parsed.find('div', attrs={'class' : 'line ' + service_line}).find(text=users_service).parent.parent
 
