@@ -44,7 +44,7 @@ else :
 #Calculates how long to pause for before continuing/sending email
 time_stamp1 = datetime.datetime.now()
 time_stamp2 = time_stamp1.replace(hour=hour, minute=mins)
-delta = time_stamp2 - time_stamp
+delta = time_stamp2 - time_stamp1
 
 #Pauses application for seconds calculated above
 pause.seconds(delta.total_seconds())
